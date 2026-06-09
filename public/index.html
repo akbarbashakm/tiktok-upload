@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TikTok Video Publisher</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0a;
+      --surface: #141414;
+      --border: #2a2a2a;
+      --accent: #fe2c55;
+      --accent2: #25f4ee;
+      --text: #f1f1f2;
+      --muted: #8a8b91;
+      --radius: 12px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px 80px;
+    }
+
+    /* ── Header ── */
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .logo svg { width: 40px; height: 40px; }
+    header h1 { font-size: 1.8rem; font-weight: 700; }
+    header p  { color: var(--muted); font-size: .95rem; margin-top: 6px; }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      width: 100%;
+      max-width: 560px;
+    }
+
+    /* ── Auth section ── */
+    #auth-section { text-align: center; }
+    #auth-section p { color: var(--muted); margin-bottom: 24px; font-size: .95rem; line-height: 1.6; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: 8px;
+      border: none;
+      font-size: .95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity .15s, transform .1s;
+      text-decoration: none;
+    }
+    .btn:hover  { opacity: .88; }
+    .btn:active { transform: scale(.97); }
+
+    .btn-tiktok  { background: var(--accent); color: #fff; }
+    .btn-publish { background: var(--accent); color: #fff; width: 100%; justify-content: center; font-size: 1rem; padding: 14px; margin-top: 8px; }
+    .btn-logout  { background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 8px 16px; font-size: .85rem; }
+
+    /* ── User badge ── */
+    #user-badge {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #1e1e1e;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-bottom: 28px;
+    }
+    #user-badge .label { font-size: .85rem; color: var(--muted); }
+    #user-badge .id    { font-size: .85rem; color: var(--accent2); font-family: monospace; }
+
+    /* ── Form ── */
+    .form-group { margin-bottom: 20px; }
+    label { display: block; font-size: .85rem; color: var(--muted); margin-bottom: 6px; font-weight: 500; }
+
+    input[type="text"],
+    input[type="url"],
+    textarea,
+    select {
+      width: 100%;
+      background: #1e1e1e;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: .95rem;
+      padding: 11px 14px;
+      outline: none;
+      transition: border-color .15s;
+    }
+    input[type="text"]:focus,
+    input[type="url"]:focus,
+    textarea:focus,
+    select:focus { border-color: var(--accent2); }
+    textarea { resize: vertical; min-height: 90px; font-family: inherit; }
+    select option { background: #1e1e1e; }
+
+    .char-count { font-size: .78rem; color: var(--muted); text-align: right; margin-top: 4px; }
+    .char-count.warn { color: var(--accent); }
+
+    /* ── Toggle switches ── */
+    .toggles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+    .toggle-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #1e1e1e;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+    }
+    .toggle-item span { font-size: .85rem; color: var(--muted); }
+
+    .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; inset: 0;
+      background: #333;
+      border-radius: 22px;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .slider::before {
+      content: "";
+      position: absolute;
+      width: 16px; height: 16px;
+      left: 3px; bottom: 3px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform .2s;
+    }
+    .switch input:checked + .slider { background: var(--accent); }
+    .switch input:checked + .slider::before { transform: translateX(18px); }
+
+    /* ── Status box ── */
+    #status-box {
+      margin-top: 20px;
+      padding: 14px 16px;
+      border-radius: 8px;
+      font-size: .9rem;
+      display: none;
+      line-height: 1.5;
+    }
+    #status-box.info    { background: #0d2540; border: 1px solid #1a4a80; color: #7ab8f5; }
+    #status-box.success { background: #0d2e1f; border: 1px solid #1a6040; color: #4fce8a; }
+    #status-box.error   { background: #2e0d0d; border: 1px solid #6b1a1a; color: #f56e6e; }
+    #status-box.warning { background: #2a2000; border: 1px solid #665500; color: #f5c842; }
+
+    .status-title { font-weight: 700; margin-bottom: 4px; }
+
+    /* ── Progress ── */
+    .progress-wrap { margin-top: 12px; background: #1e1e1e; border-radius: 99px; height: 6px; overflow: hidden; display: none; }
+    .progress-bar  { height: 100%; background: linear-gradient(90deg, var(--accent2), var(--accent)); border-radius: 99px; width: 0%; transition: width .4s; }
+
+    /* ── Divider ── */
+    .divider { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
+
+    /* ── Tip box ── */
+    .tip {
+      background: #111;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 16px;
+      font-size: .83rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+    .tip strong { color: var(--text); }
+
+    /* ── Error banner (query-param) ── */
+    #error-banner {
+      background: #2e0d0d;
+      border: 1px solid #6b1a1a;
+      color: #f56e6e;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      font-size: .9rem;
+      display: none;
+    }
+
+    #sandbox-banner {
+      background: #2a2000;
+      border: 1px solid #665500;
+      color: #f5c842;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      font-size: .88rem;
+      line-height: 1.5;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="logo">
+      <!-- TikTok-style musical note icon -->
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05A6.34 6.34 0 003.15 15.3a6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.34-6.34V8.69a8.17 8.17 0 004.78 1.53V6.77a4.85 4.85 0 01-1.02-.08z" fill="#fe2c55"/>
+      </svg>
+      <h1>TikTok Publisher</h1>
+    </div>
+    <p>Paste a video URL and publish it directly to your TikTok account</p>
+  </header>
+
+  <div class="card">
+    <div id="error-banner"></div>
+
+    <!-- ── NOT LOGGED IN ── -->
+    <div id="auth-section">
+      <p>Connect your TikTok account to start publishing videos. We only request the <strong>video.upload</strong> and <strong>video.publish</strong> permissions.</p>
+      <a href="/auth/login" class="btn btn-tiktok">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05A6.34 6.34 0 003.15 15.3a6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.34-6.34V8.69a8.17 8.17 0 004.78 1.53V6.77a4.85 4.85 0 01-1.02-.08z"/></svg>
+        Connect with TikTok
+      </a>
+    </div>
+
+    <!-- ── LOGGED IN ── -->
+    <div id="publish-section" style="display:none">
+
+      <div id="sandbox-banner"></div>
+
+      <!-- User badge -->
+      <div id="user-badge">
+        <div>
+          <div class="label">Connected as</div>
+          <div class="id" id="open-id-label">—</div>
+        </div>
+        <button class="btn btn-logout" id="logout-btn">Disconnect</button>
+      </div>
+
+      <!-- Form -->
+      <div class="form-group">
+        <label for="video-url">Video URL <span style="color:var(--accent)">*</span></label>
+        <input type="url" id="video-url" placeholder="https://example.com/video.mp4" autocomplete="off" />
+      </div>
+
+      <div class="form-group">
+        <label for="title">Caption / Title</label>
+        <textarea id="title" placeholder="Write a caption…" maxlength="2200"></textarea>
+        <div class="char-count"><span id="char-count">0</span> / 2200</div>
+      </div>
+
+      <div class="form-group">
+        <label for="privacy">Privacy</label>
+        <select id="privacy">
+          <option value="" disabled selected>Select privacy…</option>
+        </select>
+      </div>
+
+      <div class="toggles">
+        <div class="toggle-item">
+          <span>Disable comments</span>
+          <label class="switch"><input type="checkbox" id="disable-comment" /><span class="slider"></span></label>
+        </div>
+        <div class="toggle-item">
+          <span>Disable duet</span>
+          <label class="switch"><input type="checkbox" id="disable-duet" /><span class="slider"></span></label>
+        </div>
+        <div class="toggle-item">
+          <span>Disable stitch</span>
+          <label class="switch"><input type="checkbox" id="disable-stitch" /><span class="slider"></span></label>
+        </div>
+      </div>
+
+      <button class="btn btn-publish" id="publish-btn">
+        🚀 Publish to TikTok
+      </button>
+
+      <div class="progress-wrap" id="progress-wrap">
+        <div class="progress-bar" id="progress-bar"></div>
+      </div>
+
+      <div id="status-box"></div>
+
+      <hr class="divider" />
+
+      <div class="tip">
+        <strong>How it works</strong><br>
+        TikTok pulls the video directly from your URL — no file upload needed. The video must be publicly accessible, MP4 / WebM, ≤ 60 min, and ≤ 4 GB. After submitting you'll see a <em>publish_id</em>; the video appears on TikTok once processing is done (usually a few seconds).
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ── Helpers ──────────────────────────────────────────────────────────────
+    const $ = id => document.getElementById(id);
+    const params = new URLSearchParams(location.search);
+
+    function setStatus(type, title, body) {
+      const box = $("status-box");
+      box.className = `status-title ${type}`;  // reset
+      box.style.display = "block";
+      box.className = type;  // color class
+      box.innerHTML = `<div class="status-title">${title}</div>${body}`;
+    }
+
+    function setProgress(pct) {
+      const wrap = $("progress-wrap");
+      const bar  = $("progress-bar");
+      if (pct === null) { wrap.style.display = "none"; bar.style.width = "0%"; return; }
+      wrap.style.display = "block";
+      bar.style.width = `${pct}%`;
+    }
+
+    // ── Show error banner from query param ───────────────────────────────────
+    if (params.get("error")) {
+      const b = $("error-banner");
+      b.textContent = decodeURIComponent(params.get("error"));
+      b.style.display = "block";
+    }
+
+    const PRIVACY_LABELS = {
+      SELF_ONLY: "Only me",
+      MUTUAL_FOLLOW_FRIENDS: "Friends",
+      FOLLOWER_OF_CREATOR: "Followers",
+      PUBLIC_TO_EVERYONE: "Public",
+    };
+
+    function renderPrivacyOptions(options = []) {
+      const select = $("privacy");
+      select.innerHTML = '<option value="" disabled selected>Select privacy…</option>';
+      options.forEach((value) => {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = PRIVACY_LABELS[value] || value;
+        select.appendChild(option);
+      });
+    }
+
+    async function loadCreatorInfo() {
+      const banner = $("sandbox-banner");
+      try {
+        const res = await fetch("/creator/info");
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed to load creator info");
+
+        $("open-id-label").textContent = data.creator_username || data.creator_nickname || "Connected";
+        renderPrivacyOptions(data.privacy_level_options || ["SELF_ONLY"]);
+        banner.style.display = "block";
+        banner.textContent =
+          "Unaudited app: set your TikTok account to Private in the TikTok app, then choose Only me here.";
+      } catch (err) {
+        renderPrivacyOptions(["SELF_ONLY"]);
+        banner.style.display = "block";
+        banner.textContent = err.message;
+      }
+    }
+
+    // ── Check auth status ────────────────────────────────────────────────────
+    async function checkAuth() {
+      const res = await fetch("/auth/status");
+      const data = await res.json();
+      if (data.loggedIn || params.get("loggedIn")) {
+        $("auth-section").style.display = "none";
+        $("publish-section").style.display = "block";
+        await loadCreatorInfo();
+      } else {
+        $("auth-section").style.display = "block";
+        $("publish-section").style.display = "none";
+        $("sandbox-banner").style.display = "none";
+      }
+      // clean URL
+      if (params.get("loggedIn") || params.get("error")) {
+        history.replaceState({}, "", "/");
+      }
+    }
+    checkAuth();
+
+    // ── Logout ───────────────────────────────────────────────────────────────
+    $("logout-btn").addEventListener("click", async () => {
+      await fetch("/auth/logout", { method: "POST" });
+      checkAuth();
+    });
+
+    // ── Char counter ─────────────────────────────────────────────────────────
+    $("title").addEventListener("input", () => {
+      const len = $("title").value.length;
+      const el  = $("char-count");
+      el.textContent = len;
+      el.closest(".char-count").classList.toggle("warn", len > 2000);
+    });
+
+    // ── Publish ──────────────────────────────────────────────────────────────
+    let pollTimer = null;
+
+    $("publish-btn").addEventListener("click", async () => {
+      const videoUrl = $("video-url").value.trim();
+      const privacyLevel = $("privacy").value;
+      if (!videoUrl) {
+        setStatus("error", "Missing URL", "Please enter a video URL.");
+        return;
+      }
+      if (!privacyLevel) {
+        setStatus("error", "Missing privacy", "Please select a privacy level.");
+        return;
+      }
+
+      $("publish-btn").disabled = true;
+      $("publish-btn").textContent = "Publishing…";
+      setStatus("info", "Downloading…", "Fetching the video from your URL.");
+      setProgress(15);
+
+      try {
+        const res = await fetch("/publish", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            video_url:       videoUrl,
+            title:           $("title").value,
+            privacy_level:   privacyLevel,
+            disable_comment: $("disable-comment").checked,
+            disable_duet:    $("disable-duet").checked,
+            disable_stitch:  $("disable-stitch").checked,
+          }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Publish failed");
+
+        setProgress(50);
+        setStatus("info", "Processing", `TikTok is processing your video… <br/><code style="font-size:.8rem;color:#aaa">publish_id: ${data.publish_id}</code>`);
+
+        // Poll for status
+        if (pollTimer) clearInterval(pollTimer);
+        pollTimer = setInterval(() => pollStatus(data.publish_id), 3000);
+      } catch (err) {
+        setStatus("error", "Error", err.message);
+        setProgress(null);
+        resetBtn();
+      }
+    });
+
+    async function pollStatus(publishId) {
+      try {
+        const res  = await fetch(`/publish/status/${publishId}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+
+        const status = data.status;
+
+        if (status === "PROCESSING_UPLOAD" || status === "PROCESSING_DOWNLOAD") {
+          setProgress(65);
+          setStatus("info", "Processing…", "TikTok is still processing your video.");
+        } else if (status === "SEND_TO_USER_INBOX") {
+          clearInterval(pollTimer);
+          setProgress(100);
+          setStatus("warning", "In your inbox", "The video is in your TikTok inbox as a draft. Open the TikTok app to review and post.");
+          resetBtn();
+        } else if (status === "PUBLISH_COMPLETE") {
+          clearInterval(pollTimer);
+          setProgress(100);
+          setStatus("success", "✅ Published!", "Your video is now live on TikTok.");
+          resetBtn();
+        } else if (status === "FAILED") {
+          clearInterval(pollTimer);
+          setProgress(null);
+          setStatus("error", "Upload failed", `TikTok rejected the video. Reason: ${data.fail_reason || "unknown"}`);
+          resetBtn();
+        }
+      } catch (err) {
+        clearInterval(pollTimer);
+        setStatus("error", "Status check failed", err.message);
+        resetBtn();
+      }
+    }
+
+    function resetBtn() {
+      $("publish-btn").disabled = false;
+      $("publish-btn").textContent = "🚀 Publish to TikTok";
+    }
+  </script>
+</body>
+</html>
